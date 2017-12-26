@@ -16,7 +16,17 @@
 #define ERROR		2
 #define READ		3
 
-#define MAX_INTERVALS 25
+#define MAX_INTERVALS 	16
+#define OUTPUTS			5
+
+// Second identifiers for scroll
+#define DURATION	0
+#define RELAY		1
+#define SONG		2
+#define SLED		3
+#define GARAGE		4
+
+#define STOP	0xFF
 
 // Create objects for Soundboard
 SoftwareSerial ss = SoftwareSerial(SFX_TX, SFX_RX);
@@ -36,6 +46,8 @@ uint16_t test_interval[] = {1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,10
 
 uint16_t score[MAX_INTERVALS];
 uint16_t interval[MAX_INTERVALS];
+
+uint16_t scroll[MAX_INTERVALS][OUTPUTS];
 
 void mcp_init() {
 	mcp.begin(MCP_addr); 
@@ -61,8 +73,21 @@ void setup() {
 		state = ERROR;
 	}
 
-	sfx.playTrack(1); // TODO: call soundboard
 	state = READ; // TODO:Wait to get call from bluetooth
+}
+
+// song number or STOP for no song
+void playMusic(uint16_t song_number) {
+	if(song_number != STOP)	sfx.playTrack(song_number);
+}
+
+void secondaryMotion(uint16_t sled) {
+	// TODO:Work with motor controller
+}
+
+// garage is HIGH or LOW
+void primaryMotion(uint8_t garage) {
+	mcp.digitalWrite(16, garage);
 }
 
 void loop() {
@@ -71,10 +96,14 @@ void loop() {
 			digitalWrite(13, HIGH);
 			break;
 		case PLAY:
-			if ((countNow = millis()) - countLast > interval[index]) {
-				mcp.writeGPIOAB(~score[index++]);	
+			countNow = millis();
+			if (countNow - countLast > scroll[index][DURATION]) {
+				mcp.writeGPIOAB(~scroll[index][RELAY]);	
+				playMusic(scroll[index][SONG]);
+				secondaryMotion(scroll[index][SLED]);
+				primaryMotion(scroll[index][GARAGE]);
 				countLast = countNow;
-				if (index >= 16) state = IDLE;
+				if (++index >= MAX_INTERVALS) state = IDLE;
 			}
 			break;
 		case READ:
