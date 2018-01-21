@@ -28,6 +28,13 @@
 
 #define STOP	0xFF
 
+#define MOTOR_INA	7
+#define MOTOR_INB	8
+#define MOTOR_PWM	9
+#define MOTOR_SPD	200
+#define IN			1
+#define OUT			2
+
 // Create objects for Soundboard
 SoftwareSerial ss = SoftwareSerial(SFX_TX, SFX_RX);
 Adafruit_Soundboard sfx = Adafruit_Soundboard(&ss, NULL, SFX_RST);
@@ -78,6 +85,12 @@ void setup() {
   	if (!sfx.reset()) {
 		state = ERROR;
 	}
+
+	// Motor init
+	pinMode(MOTOR_PWM, OUTPUT);
+	pinMode(MOTOR_INA, OUTPUT);
+	pinMode(MOTOR_INB, OUTPUT);
+
 	state = IDLE;
 }
 
@@ -86,8 +99,11 @@ void playMusic(uint16_t song_number) {
 	if(song_number != STOP)	sfx.playTrack(songs[song_number]);
 }
 
+// sled must be OUT or IN or STOP
 void secondaryMotion(uint16_t sled) {
-	// TODO:Work with motor controller
+	digitalWrite(MOTOR_INA, (sled == OUT)?HIGH:LOW);
+	digitalWrite(MOTOR_INB, (sled == IN)?HIGH:LOW);
+	analogWrite(MOTOR_PWM, MOTOR_SPD);
 }
 
 
